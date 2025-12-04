@@ -56,3 +56,5 @@ sim_result*
 Thumbs.db
 .DS_Store
 
+!maligner/
+!maligner/**
