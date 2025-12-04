@@ -6,9 +6,8 @@ DOM is a Python toolkit for analyzing dual-channel optical mapping data from TIF
 
 - **GUI-based analysis**: Interactive visualization and matching results browser
 - **Batch processing**: Process multiple TIFF files in a folder
-- **Multiple alignment methods**: PCC and maligner-based alignment
-- **FASTA to TIFF conversion**: Generate reference maps from FASTA sequence files
-- **Simulation support**: Generate in-silico intensity profiles from DNA sequences
+- **Multiple alignment methods**: PCC-based and maligner-based alignment
+- **FASTA to TIFF conversion**: Generate reference maps from FASTA sequence files (direct or simulation-based)
 
 ## Requirements
 
@@ -18,7 +17,7 @@ DOM is a Python toolkit for analyzing dual-channel optical mapping data from TIF
 
 ### About Maligner
 
-This project includes a Python 3 port of the `maligner` alignment tool. The original `maligner` software was written in Python 2 and is distributed under the GPL v3.0 license. We have ported it to Python 3 for compatibility with modern Python environments. The `maligner` code is included in the `maligner/` folder.
+This project includes a Python 3 port of the `maligner` alignment tool. The original `maligner` software was written in Python 2. We have ported it to Python 3 for compatibility with modern Python environments. The `maligner` code is included in the `maligner/` folder.
 
 **Note on Licensing**: The `maligner` component is distributed under the GPL v3.0 license. If you modify or distribute this software, please ensure compliance with the GPL license terms. See the `maligner/` folder for the original license information and source code details.
 
@@ -26,7 +25,7 @@ This project includes a Python 3 port of the `maligner` alignment tool. The orig
 
 1. Clone the repository:
 ```bash
-git clone <repository-url>
+git clone https://github.com/jolaboffice/DOM.git
 cd DOM
 ```
 
@@ -73,7 +72,13 @@ python DOM.py ./tif_data --map ref_map/RG.tif
 `DOM.py` automatically runs `DOM_match.py`, `pcc_tifFolder.py`, `mapping_tifFolder.py`, and `DOM_make_info.py` internally as needed. You can also run these scripts individually for batch processing without GUI.
 
 ```bash
-python DOM.py <data_folder> [--map MAP_FILE] [--bpp BPP] [--shift-window WINDOW] [--start-bpp START_BPP] [--end-bpp END_BPP] [--maligner-path PATH]
+python DOM.py <data_folder> \
+  [--map MAP_FILE] \
+  [--bpp BPP] \
+  [--shift-window WINDOW] \
+  [--start-bpp START_BPP] \
+  [--end-bpp END_BPP] \
+  [--maligner-path PATH]
 ```
 
 ### Generate Reference Map from FASTA
@@ -82,13 +87,26 @@ Generate reference TIFF map from FASTA sequence file. Two methods are available:
 
 **Method 1: Direct sequence pattern matching** (`seq2RGmap.py`):
 ```bash
-python seq2RGmap.py <fasta_file> [--output OUTPUT.tif] [--bpp BPP] [--seq-for-R SEQ_FOR_R] [--seq-for-G SEQ_FOR_G]
+python seq2RGmap.py <fasta_file> \
+  [--output OUTPUT.tif] \
+  [--bpp BPP] \
+  [--seq-for-R SEQ] \
+  [--seq-for-G SEQ]
 ```
 
 **Method 2: Simulation-based** (`simulation.py`):
 Generates TIFF map using in-silico simulation of DNA binding sites:
 ```bash
-python simulation.py <fasta_file> [--output OUTPUT.tif] [--bpp BPP] [--n-fragments N] [--sim-times N] [--binding-len LEN] [--block-len LEN] [--binding-efficiency EFF] [--seq-for-R SEQ_FOR_R] [--seq-for-G SEQ_FOR_G]
+python simulation.py <fasta_file> \
+  [--output OUTPUT.tif] \
+  [--bpp BPP] \
+  [--n-fragments N] \
+  [--sim-times N] \
+  [--binding-len LEN] \
+  [--block-len LEN] \
+  [--binding-efficiency EFF] \
+  [--seq-for-R SEQ] \
+  [--seq-for-G SEQ]
 ```
 
 ### Standalone Tools (Optional)
@@ -107,7 +125,10 @@ python pcc_tifFolder.py <data_folder> [--map MAP_FILE] [--bpp BPP] [--start-bpp 
 
 **Generate Maligner Logs**:
 ```bash
-python mapping_tifFolder.py <data_folder> [--map MAP_FILE] [--bpp BPP] [--maligner-path PATH]
+python mapping_tifFolder.py <data_folder> \
+  [--map MAP_OR_MAPS_FILE] \
+  [--bpp BPP] \
+  [--maligner-path PATH]
 ```
 Note: The `--map` option accepts both `.tif` and `.maps` files.
 
