@@ -29,6 +29,7 @@ def parse_args():
                        help=f'Base pairs per pixel (default: {DOM_constants.DEFAULT_BPP})')
     parser.add_argument('--maligner-path', dest='maligner_path', default=DOM_constants.DEFAULT_MALIGNER_PATH,
                        help=f'Path to maligner executable (default: {DOM_constants.DEFAULT_MALIGNER_PATH})')
+    
     return parser.parse_args()
 
 def resolve_maligner_path(path_hint):
@@ -169,7 +170,7 @@ def prepare_reference_maps(ref_path, bpp):
         ref_map_maps_smoothed = os.path.splitext(ref_map_tif)[0] + "_smoothed.maps"
         smooth_cmd = shutil.which("smooth_maps_file")
         if smooth_cmd:
-            print(f"Smoothing maps file...")
+            #print(f"Smoothing maps file...")
             try:
                 with open(ref_map_maps_smoothed, 'w') as f:
                     subprocess.run([smooth_cmd, ref_map_maps], stdout=f, check=True)

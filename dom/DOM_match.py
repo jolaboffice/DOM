@@ -19,7 +19,7 @@ import DOM_constants
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # Column names for output CSV
-OUTPUT_COLUMNS = ['method', 'shift_bp', 'direction', 'scale', 'cc_rg', 'cc_r', 'cc_g', 'cc_rg2', 'rank', 'misc']
+OUTPUT_COLUMNS = ['method', 'start_bp', 'direction', 'scale', 'cc_r', 'cc_g', 'cc_rg', 'cc_rg2', 'rank', 'misc']
 
 
 def parse_args():
@@ -104,7 +104,7 @@ def read_pcc_results(data_file):
     df['r_pos'] = 0.0
     df['cc_rg2'] = df['score']
     df['rank'] = df.index
-    return df[['method','shift','direction','scale','score','g_pos','r_pos','cc_rg2','cc_rg','cc_r','cc_g','rank']]
+    return df[['method','shift','direction','scale','score','g_pos','r_pos','cc_rg2','cc_r','cc_g','cc_rg','rank']]
 
 
 def read_maligner_results(data_file):
@@ -124,7 +124,7 @@ def read_maligner_results(data_file):
     if 'r_pos' not in df.columns:
         df['r_pos'] = 0.0
 
-    return df[['method','shift','direction','scale','score','g_pos','r_pos','cc_rg2','cc_rg','cc_r','cc_g','rank']]
+    return df[['method','shift','direction','scale','score','g_pos','r_pos','cc_rg2','cc_r','cc_g','cc_rg','rank']]
 
 
 def filter_results(df, bpp, mol_length_bp, shift_window):
@@ -135,26 +135,25 @@ def filter_results(df, bpp, mol_length_bp, shift_window):
         return pd.DataFrame()
 
     df = df.copy()
-    df['shift_bp'] = df['shift'] * bpp
-    df['start_bp'] = df['shift_bp']
-    df['end_bp'] = df['shift_bp'] + (mol_length_bp * df['scale'])
+    df['start_bp'] = df['shift'] * bpp
+    df['end_bp'] = df['start_bp'] + (mol_length_bp * df['scale'])
     df = df.sort_values(by='cc_rg2', ascending=False).reset_index(drop=True)
 
     pcc_df = df[df['method'] == 'pcc'].copy().reset_index(drop=True)
     mal_df = df[df['method'] == 'maligner'].copy().reset_index(drop=True)
 
     def _group_by_shift(df_subset, shift_window_bp, use_count_as_score=False):
-        """Group results by shift_bp within shift_window. Returns filtered DataFrame."""
+        """Group results by start_bp within shift_window. Returns filtered DataFrame."""
         if df_subset.empty:
             return pd.DataFrame(columns=df_subset.columns)
         
         groups = []
         for idx, row in df_subset.iterrows():
-            shift_bp = row['shift_bp']
+            start_bp = row['start_bp']
             matched = False
-            # Check if this shift_bp matches any existing group
+            # Check if this start_bp matches any existing group
             for grp in groups:
-                if abs(shift_bp - grp['shift']) <= shift_window_bp:
+                if abs(start_bp - grp['shift']) <= shift_window_bp:
                     if use_count_as_score:
                         grp['count'] += 1  # Increment count for PCC
                     matched = True
@@ -164,7 +163,7 @@ def filter_results(df, bpp, mol_length_bp, shift_window):
             # Create new group if we haven't reached the limit
             if len(groups) < 10:
                 groups.append({
-                    'shift': shift_bp,
+                    'shift': start_bp,
                     'count': 1 if use_count_as_score else 0,
                     'record': row.copy()
                 })
@@ -238,14 +237,29 @@ def ensure_single_info(tif_path, bpp):
     info_data = parse_info_file(info_path)
     if _validate_info_data(info_data, bpp):
         return info_data
-    target_folder = os.path.dirname(tif_path) or "."
-    print(f"Info missing/outdated for {os.path.basename(tif_path)}. Running DOM_make_info.py ...")
+    
+    # Generate .info file directly for this single file (don't process entire folder)
+    print(f"Info missing/outdated for {os.path.basename(tif_path)}. Generating .info file...")
     try:
-        run_make_info(target_folder, bpp)
-    except subprocess.CalledProcessError as exc:
-        print(f"ERROR: DOM_make_info.py failed ({exc.returncode}) while processing {tif_path}.", file=sys.stderr)
+        _, w2, _ = lib.tif2RGimage(tif_path)
+    except Exception as exc:
+        print(f"ERROR: Failed to read TIFF data from {tif_path}: {exc}", file=sys.stderr)
         sys.exit(1)
-    return parse_info_file(info_path)
+    
+    info_data = {
+        "filename": os.path.basename(tif_path),
+        "bpp": bpp,
+        "mol_length_bp": w2 * bpp
+    }
+    try:
+        with open(info_path, "w") as f:
+            for key, val in info_data.items():
+                f.write(f"{key}:{val}\n")
+    except Exception as exc:
+        print(f"ERROR: Failed to write {info_path}: {exc}", file=sys.stderr)
+        sys.exit(1)
+    
+    return info_data
 
 
 def ensure_info_files(tif_files, data_folder, bpp):
@@ -359,8 +373,8 @@ def process_tif(data_file, bpp, shift_window):
         print(f"  ⚠  Warning: {len(mal_df)} maligner result(s) were filtered out")
 
     # Prepare output DataFrame
-    df_display = combined[['method','shift','direction','scale','cc_rg','cc_r','cc_g','cc_rg2','rank','misc']].copy()
-    df_display['shift_bp'] = df_display['shift'] * bpp
+    df_display = combined[['method','shift','direction','scale','cc_r','cc_g','cc_rg','cc_rg2','rank','misc']].copy()
+    df_display['start_bp'] = df_display['shift'] * bpp
     df_display = df_display.drop(columns=['shift'])
     df_display['rank'] = df_display['rank'] + 1  # Convert 0-based to 1-based rank
     

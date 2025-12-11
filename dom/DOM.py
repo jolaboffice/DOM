@@ -45,7 +45,7 @@ def _read_matching_csv(data_file):
     except Exception as exc:
         print(f"Warning: Failed to read precomputed matching results {csv_path}: {exc}")
         return None
-    required = {'method','shift_bp','scale','cc_rg','cc_r','cc_g','cc_rg2','rank','misc'}
+    required = {'method','start_bp','scale','cc_r','cc_g','cc_rg','cc_rg2','rank','misc'}
     if not required.issubset(df.columns):
         return None
     if 'direction' not in df.columns:
@@ -53,8 +53,8 @@ def _read_matching_csv(data_file):
     matching_methods = []
     for _, row in df.iterrows():
         method = str(row['method'])
-        shift_bp = row['shift_bp']
-        shift = shift_bp / BPP
+        start_bp = row['start_bp']
+        shift = start_bp / BPP
         direction = int(row['direction']) if 'direction' in row and not pd.isna(row['direction']) else 1
         scale = row['scale']
         misc = row['misc'] if pd.notna(row['misc']) else 0.0
@@ -65,7 +65,7 @@ def _read_matching_csv(data_file):
         cc_g = row['cc_g']
         cc_rg2 = row['cc_rg2']
         rank = row['rank'] if pd.notna(row['rank']) else 0
-        matching_methods.append([method, shift, direction, scale, misc, g_pos, r_pos, cc_rg, cc_r, cc_g, cc_rg2, rank])
+        matching_methods.append([method, shift, direction, scale, misc, g_pos, r_pos, cc_r, cc_g, cc_rg, cc_rg2, rank])
     return matching_methods
 
 def _run_dom_match(data_target, is_file=True):
@@ -180,7 +180,7 @@ def match_display(mat_df, RGmap, data_file):
     df_display = DOM_ui.build_display_table(df, BPP)
 
     DOM_ui.render_results_panel(df_display, current_row_idx=None)
-    print(df_display[['rank','method','shift_bp','scale','cc_rg','cc_r','cc_g','cc_rg2','misc']])
+    print(df_display[['rank','method','start_bp','scale','cc_r','cc_g','cc_rg','cc_rg2','misc']])
     print('\n')
     profiles = _load_profile_data(RGmap, data_file)
     DOM_ui.clear_alignment_lines()
@@ -195,7 +195,7 @@ def match_display(mat_df, RGmap, data_file):
         row = df.loc[idx]
         method = row['method']
         shift_px = int(row['shift'])
-        shift_bp = shift_px * BPP
+        start_bp = shift_px * BPP
         direction = int(row['direction'])
         scale = row['scale']
         misc = row['misc']
@@ -205,7 +205,7 @@ def match_display(mat_df, RGmap, data_file):
         cc_r = row['cc_r']
         cc_g = row['cc_g']
 
-        DOM_ui.update_table_highlight(df_display, method, shift_bp, scale)
+        DOM_ui.update_table_highlight(df_display, method, start_bp, scale)
         alignment = _prepare_alignment_arrays(row, profiles['w2'], profiles['clip1r'], profiles['clip1g'],
                                               profiles['clip2r'], profiles['clip2g'])
         DOM_ui.plot_alignment(
@@ -242,7 +242,7 @@ def match_display(mat_df, RGmap, data_file):
             cc_rg,
             cc_r,
             cc_g,
-            shift_bp=shift_bp
+            start_bp=start_bp
         )
 
         if result == 'prev':
@@ -266,7 +266,7 @@ def Compare_Ref_and_Data(RGmap, data_file):
     if not matching_methods:
         print(f"No matching results available for {data_file}.")
         return 'continue'
-    col=['method','shift','direction','scale','misc','g_pos','r_pos','cc_rg','cc_r','cc_g','cc_rg2','rank']
+    col=['method','shift','direction','scale','misc','g_pos','r_pos','cc_r','cc_g','cc_rg','cc_rg2','rank']
     mat_df=pd.DataFrame(matching_methods, columns=col)
     result = match_display(mat_df, RGmap, data_file)
     if result == 'file_clicked':

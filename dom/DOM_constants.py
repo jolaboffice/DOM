@@ -14,4 +14,3 @@ DEFAULT_MALIGNER_PATH = '../maligner/build/bin/maligner_dp'
 DEFAULT_SEQ_FOR_R = 'A'
 DEFAULT_SEQ_FOR_G = 'CTTAAG'
 
-

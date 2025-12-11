@@ -94,19 +94,18 @@ python seq2RGmap.py <fasta_file> \
   [--seq-for-G SEQ]
 ```
 
-**Method 2: Simulation-based** (`simulation.py`):
+**Method 2: Simulation-based** (`sim2RGmap.py`):
 Generates TIFF map using in-silico simulation of DNA binding sites:
 ```bash
-python simulation.py <fasta_file> \
+python sim2RGmap.py <fasta_file> <sim_times>\
   [--output OUTPUT.tif] \
   [--bpp BPP] \
   [--n-fragments N] \
   [--sim-times N] \
   [--binding-len LEN] \
-  [--block-len LEN] \
-  [--binding-efficiency EFF] \
   [--seq-for-R SEQ] \
   [--seq-for-G SEQ]
+  [--overwrite]
 ```
 
 ### Standalone Tools (Optional)
@@ -142,7 +141,7 @@ python DOM_make_info.py <data_folder> [--bpp BPP]
 **Main Scripts:**
 - `DOM.py` - Main GUI application (automatically calls other scripts as needed)
 - `seq2RGmap.py` - Generate reference TIFF map from FASTA file (direct sequence pattern matching)
-- `simulation.py` - Generate reference TIFF map from FASTA file (simulation-based method)
+- `sim2RGmap.py` - Generate reference TIFF map from FASTA file (simulation-based method)
 
 **Supporting Scripts** (called automatically by `DOM.py`, but can be run standalone):
 - `DOM_match.py` - Batch matching results generator (CSV output)

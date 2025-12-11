@@ -64,14 +64,28 @@ def render_results_table(ax_table, df_display, current_row_idx=None):
     
     ax_table.text(0.5, 0.98, "Matching Results", ha="center", va="top", fontsize=12, fontweight="bold")
     
+    # Determine column header name: 'Reference' for hDOM.py, 'method' for DOM.py
+    # Check if 'method' column contains reference names (like 'chr1', 'chr2') or method names ('pcc', 'maligner')
+    method_col_name = "method"
+    if 'method' in df_display.columns and len(df_display) > 0:
+        # Check first few non-empty method values
+        method_values = df_display['method'].dropna().head(5).tolist()
+        # If values look like reference names (contain 'chr' or are chromosome-like), use 'Reference'
+        # Otherwise use 'method' (for 'pcc', 'maligner', etc.)
+        if method_values:
+            first_val = str(method_values[0]).lower()
+            # Reference names typically contain 'chr' or are chromosome identifiers
+            if 'chr' in first_val or (len(first_val) > 0 and first_val[0].isdigit()):
+                method_col_name = "ref"
+    
     columns = [
         ("rank", "rank", 0.05, "left"),
-        ("method", "method", 0.12, "left"),
-        ("shift_bp", "shift_bp", 0.30, "right"),
+        (method_col_name, "method", 0.12, "left"),
+        ("start_bp", "start_bp", 0.30, "right"),
         ("scale", "scale", 0.40, "right"),
-        ("cc_rg", "cc_rg", 0.50, "right"),
-        ("cc_r", "cc_r", 0.60, "right"),
-        ("cc_g", "cc_g", 0.70, "right"),
+        ("cc_r", "cc_r", 0.50, "right"),
+        ("cc_g", "cc_g", 0.60, "right"),
+        ("cc_rg", "cc_rg", 0.70, "right"),
         ("cc_rg2", "cc_rg2", 0.80, "right"),
         ("misc", "misc", 0.90, "right")
     ]
@@ -109,7 +123,7 @@ def render_results_table(ax_table, df_display, current_row_idx=None):
         # Format values
         method_raw = str(row['method'])
         method = 'mal' if method_raw == 'maligner' else ('cc' if method_raw == 'pcc' else method_raw)
-        shift_bp = f"{int(row['shift_bp']):,}" if pd.notna(row['shift_bp']) else "N/A"
+        start_bp = f"{int(row['start_bp']):,}" if pd.notna(row['start_bp']) else "N/A"
         scale = f"{row['scale']:.3f}" if pd.notna(row['scale']) else "N/A"
         cc_rg = f"{row['cc_rg']:.3f}" if pd.notna(row['cc_rg']) else "N/A"
         cc_r = f"{row['cc_r']:.3f}" if pd.notna(row['cc_r']) else "N/A"
@@ -126,7 +140,7 @@ def render_results_table(ax_table, df_display, current_row_idx=None):
         else:
             misc_str = ""
 
-        values = [rank, method, shift_bp, scale, cc_rg, cc_r, cc_g, cc_rg2, misc_str]
+        values = [rank, method, start_bp, scale, cc_r, cc_g, cc_rg, cc_rg2, misc_str]
         color = "navy" if is_current else "black"
         weight = "bold" if is_current else "normal"
         
@@ -437,19 +451,22 @@ def plot_alignment(x2, d_clip2g, d_clip2r, direction, data_image, shift_px, imag
     show_tiff_images(shift_px, image_width, h1, RGmap_image, mol_img)
     show_graphs_compare_ref_mol(s_clip1r, s_clip1g, d_clip2r_arr, d_clip2g_arr, image_width, w2, scale, shift_px)
 
-def update_table_highlight(df_display, method, shift_bp, scale):
+def update_table_highlight(df_display, method, start_bp, scale):
     """Update table highlight using already-built df_display to avoid redundant processing."""
     current_row_idx = None
+    # Support both 'method' and 'ref' column names
+    method_col = 'method' if 'method' in df_display.columns else 'ref'
     for disp_idx, disp_row in df_display.iterrows():
-        if (disp_row['method'] == method and
-                abs(disp_row['shift_bp'] - shift_bp) < 1 and
+        if (disp_row[method_col] == method and
+                abs(disp_row['start_bp'] - start_bp) < 1 and
                 abs(disp_row['scale'] - scale) < 0.001):
             current_row_idx = disp_idx
             break
     file_list_state['current_table_row_idx'] = current_row_idx
+    display_cols = ['rank', method_col, 'start_bp', 'scale', 'cc_r', 'cc_g', 'cc_rg', 'cc_rg2', 'misc']
     render_results_table(
         file_list_state.get('ax_table'),
-        df_display[['rank','method','shift_bp','scale','cc_rg','cc_r','cc_g','cc_rg2','misc']],
+        df_display[display_cols],
         current_row_idx=current_row_idx
     )
     try:
@@ -473,9 +490,12 @@ def render_results_panel(df_display, current_row_idx=None):
     ax_table = file_list_state.get('ax_table')
     if ax_table is None:
         return
+    # Support both 'method' and 'ref' column names
+    method_col = 'method' if 'method' in df_display.columns else 'ref'
+    display_cols = ['rank', method_col, 'start_bp', 'scale', 'cc_r', 'cc_g', 'cc_rg', 'cc_rg2', 'misc']
     render_results_table(
         ax_table,
-        df_display[['rank','method','shift_bp','scale','cc_rg','cc_r','cc_g','cc_rg2','misc']],
+        df_display[display_cols],
         current_row_idx=current_row_idx
     )
     try:
@@ -483,10 +503,10 @@ def render_results_panel(df_display, current_row_idx=None):
     except Exception:
         pass
 
-def control_RGmap_viewer(shift, w2, direction, data_file, method, scale, score, x2, r_pos, g_pos, d_clip2r, d_clip2g, cc_rg, cc_r, cc_g, shift_bp=None):
+def control_RGmap_viewer(shift, w2, direction, data_file, method, scale, score, x2, r_pos, g_pos, d_clip2r, d_clip2g, cc_rg, cc_r, cc_g, start_bp=None):
     """Control the RG map viewer loop."""
-    if shift_bp is None:
-        shift_bp = shift * BPP
+    if start_bp is None:
+        start_bp = shift * BPP
     control_state['action'] = None
     global main_figure
     while True:
@@ -663,9 +683,15 @@ def update_file_display(fig, idx, tif_files_list):
 
 def build_display_table(df, bpp):
     """Build display table from DataFrame."""
-    df_display = df[['method','shift','direction','scale','cc_rg','cc_r','cc_g','cc_rg2','rank','misc']].copy()
-    df_display['shift_bp'] = df_display['shift'] * bpp
-    df_display = df_display.drop(columns=['shift']).rename(columns={'shift_bp': 'shift_bp'})
+    # Support both 'method' and 'ref' column names
+    method_col = 'method' if 'method' in df.columns else 'ref'
+    required_cols = [method_col, 'shift', 'direction', 'scale', 'cc_r', 'cc_g', 'cc_rg', 'cc_rg2', 'rank', 'misc']
+    df_display = df[required_cols].copy()
+    # Rename 'ref' to 'method' internally for consistency
+    if method_col == 'ref':
+        df_display = df_display.rename(columns={'ref': 'method'})
+    df_display['start_bp'] = df_display['shift'] * bpp
+    df_display = df_display.drop(columns=['shift']).rename(columns={'start_bp': 'start_bp'})
     df_display = df_display.drop(columns=['rank'])
     df_display.insert(0, 'rank', range(1, len(df_display) + 1))
     return df_display
