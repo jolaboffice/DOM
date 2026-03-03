@@ -71,7 +71,7 @@ def mapDataSchwartzGen(handle):
         # Skip if line is empty
         if not line.strip():
             continue
-        line2 = next(fin)  # Python 3 문법
+        line2 = next(fin)  # Python 3 syntax
         # Read two consecutive lines
         # Line 1: Chromosome name (this is line)
         # Line 2: Enzyme, 'B', List of fragment lengths (this is line2)
@@ -189,4 +189,4 @@ def write_maps(mapList, handle):
 @wrap_file_function('r', 'w')
 def convert_maps_file_to_mongo(maps_in, json_out):
     map_gen = gen_maps(maps_in)
-    # 여기에 변환 로직 추가 필요 (사용처에 맞게)
+    # TODO: Add conversion logic as needed

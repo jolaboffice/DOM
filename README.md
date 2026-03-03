@@ -4,8 +4,8 @@ DOM is a Python toolkit for analyzing dual-channel optical mapping data from TIF
 
 ## Features
 
-- **GUI-based analysis**: Interactive visualization and matching results browser
-- **Batch processing**: Process multiple TIFF files in a folder
+- **GUI-based analysis** (`dom/`): Interactive visualization and matching results browser
+- **GPU/FFT-accelerated pipeline** (`hDOM/`): Command-line pipeline with FFT-based PCC calculation on GPU
 - **Multiple alignment methods**: PCC-based and maligner-based alignment
 - **FASTA to TIFF conversion**: Generate reference maps from FASTA sequence files (direct or simulation-based)
 
@@ -14,6 +14,7 @@ DOM is a Python toolkit for analyzing dual-channel optical mapping data from TIF
 - Python 3.6+
 - See `requirements.txt` for Python package dependencies
 - `maligner_dp` executable (for maligner alignment method)
+- `cupy` (required for `hDOM/` pipeline, requires NVIDIA GPU)
 
 ### About Maligner
 
@@ -108,6 +109,19 @@ python sim2RGmap.py <fasta_file> <sim_times>\
   [--overwrite]
 ```
 
+### GPU/FFT-Accelerated Pipeline (hDOM)
+
+Command-line pipeline that uses FFT-based PCC calculation on GPU (CuPy) for faster processing.
+
+```bash
+cd hDOM
+python hDOM_calc.py <data_folder> [--ref-map REF_MAP_FOLDER] [--bpp BPP] [--recalculate] [--circular]
+```
+
+- Requires NVIDIA GPU with CuPy installed
+- Automatically calls `hDOM_pcc_ft.py` (FFT-accelerated PCC) and `hDOM_mal.py` (maligner) internally
+- Output: `*_matching_results.csv` for each input TIF file
+
 ### Standalone Tools (Optional)
 
 These scripts are automatically called by `DOM.py`, but can be run independently:
@@ -154,6 +168,11 @@ python DOM_make_info.py <data_folder> [--bpp BPP]
 - `DOM_ui.py` - UI rendering and event handling
 - `DOM_init.py` - Configuration and argument parsing
 - `DOM_constants.py` - Default configuration constants
+
+**GPU/FFT-Accelerated Pipeline** (`hDOM/`):
+- `hDOM_calc.py` - Main pipeline (calls the scripts below internally)
+- `hDOM_pcc_ft.py` - FFT-based PCC calculation on GPU
+- `hDOM_mal.py` - Maligner alignment wrapper
 
 ## Output Files
 
